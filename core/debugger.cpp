@@ -15,6 +15,8 @@ limitations under the License.
 */
 
 #include <inttypes.h>
+#include "adapters/gdbadapter.h"
+#include "adapters/lldbrspadapter.h"
 #include "adapters/lldbadapter.h"
 #ifdef WIN32
 	#include "adapters/dbgengadapter.h"
@@ -42,7 +44,7 @@ void InitDebugAdapterTypes()
 #endif
 
 	// Disable these adapters because they are not tested, and will get replaced later
-	//InitGdbAdapterType();
+	InitGdbAdapterType();
 	//InitLldbRspAdapterType();
 	InitLldbAdapterType();
 }
