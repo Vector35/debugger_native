@@ -351,6 +351,11 @@ bool GdbAdapter::Quit()
 		m_rspConnector = nullptr;
 	}
 
+	// TODO: we should only treat the target as exited when either 1) the remote side closes the socket, or, 2) the
+	// remote side returns OK to the vkill request.
+	// The current implementation is only a workaround since when we send the "k" request, the gdbserver will close
+	// the connection immediately and NOT send any response. However, if we let the target run and exit on its own,
+	// gdbserver will send a stop reply packet starting with "W".
 	DebuggerEvent dbgevt;
 	dbgevt.type = TargetExitedEventType;
 	dbgevt.data.exitData.exitCode = ExitCode();
@@ -822,6 +827,15 @@ DebugStopReason GdbAdapter::ResponseHandler()
 			dbgevt.type = TargetExitedEventType;
 			dbgevt.data.exitData.exitCode = m_exitCode;
 			PostDebuggerEvent(dbgevt);
+
+			this->m_socket->Kill();
+			m_isTargetRunning = false;
+
+			if (m_rspConnector)
+			{
+				delete m_rspConnector;
+				m_rspConnector = nullptr;
+			}
 
             return DebugStopReason::ProcessExited;
 			break;
