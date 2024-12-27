@@ -817,6 +817,12 @@ DebugStopReason GdbAdapter::ResponseHandler()
 			uint8_t exitCode = strtoul(exitCodeString.c_str(), nullptr, 16);
 			m_isTargetRunning = false;
             m_exitCode = exitCode;
+
+			DebuggerEvent dbgevt;
+			dbgevt.type = TargetExitedEventType;
+			dbgevt.data.exitData.exitCode = m_exitCode;
+			PostDebuggerEvent(dbgevt);
+
             return DebugStopReason::ProcessExited;
 			break;
 		}
