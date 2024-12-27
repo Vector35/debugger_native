@@ -305,6 +305,9 @@ bool DebuggerController::CreateDebugAdapter()
 	m_lastAdapterName = m_state->GetAdapterType();
 	m_state->SetAdapter(m_adapter);
 
+	m_adapterSupportsStepOver = m_adapter->SupportFeature(DebugAdapterSupportStepOver);
+	m_adapterSupportsTTD = m_adapter->SupportFeature(DebugAdapterSupportTTD);
+
 	ApplyBreakpoints();
 
 	// Forward the DebuggerEvent from the adapters to the controller
@@ -1369,7 +1372,7 @@ DebugStopReason DebuggerController::StepOverAndWaitInternal()
 {
 	m_userRequestedBreak = false;
 
-	if (true /* StepOverAvailable() */)
+	if (m_adapterSupportsStepOver)
 	{
 		return ExecuteAdapterAndWait(DebugAdapterStepOver);
 	}
@@ -1384,7 +1387,7 @@ DebugStopReason DebuggerController::StepOverReverseAndWaitInternal()
 {
 	m_userRequestedBreak = false;
 
-	if (true /* StepOverAvailable() */)
+	if (m_adapterSupportsStepOver)
 	{
 		return ExecuteAdapterAndWait(DebugAdapterStepOverReverse);
 	}
