@@ -204,7 +204,7 @@ bool GdbAdapter::LoadRegisterInfo()
     if (m_isTargetRunning)
         return false;
 
-    const auto xml = this->m_rspConnector.GetXml("target.xml");
+    const auto xml = this->m_rspConnector->GetXml("target.xml");
 
     pugi::xml_document doc{};
     const auto parse_result = doc.load_string(xml.c_str());
@@ -293,36 +293,69 @@ bool GdbAdapter::Connect(const std::string& server, std::uint32_t port)
         return false;
     }
 
-    this->m_rspConnector = RspConnector(this->m_socket);
-    this->m_rspConnector.TransmitAndReceive(RspData("Hg0"));
-    this->m_rspConnector.NegotiateCapabilities(
+    this->m_rspConnector = new RspConnector(this->m_socket);
+    this->m_rspConnector->TransmitAndReceive(RspData("Hg0"));
+    this->m_rspConnector->NegotiateCapabilities(
             { "swbreak+", "hwbreak+", "qRelocInsn+", "fork-events+", "vfork-events+", "exec-events+",
                          "vContSupported+", "QThreadEvents+", "no-resumed+", "xmlRegisters=i386" } );
     if ( !this->LoadRegisterInfo() )
         return false;
 
-    const auto reply = this->m_rspConnector.TransmitAndReceive(RspData("?"));
+    const auto reply = this->m_rspConnector->TransmitAndReceive(RspData("?"));
     auto map = RspConnector::PacketToUnorderedMap(reply);
 
     this->m_lastActiveThreadId = map["thread"];
 
     m_isTargetRunning = false;
+
+	DebuggerEvent dbgevt;
+	dbgevt.type = AdapterStoppedEventType;
+	dbgevt.data.targetStoppedData.reason = InitialBreakpoint;
+	PostDebuggerEvent(dbgevt);
+
     return true;
 }
 
 bool GdbAdapter::Detach()
 {
-    this->m_rspConnector.SendPayload(RspData("D"));
+    this->m_rspConnector->SendPayload(RspData("D"));
     this->m_socket->Kill();
     m_isTargetRunning = false;
+
+	if (m_rspConnector)
+	{
+		delete m_rspConnector;
+		m_rspConnector = nullptr;
+	}
+
+	DebuggerEvent dbgevt;
+	dbgevt.type = TargetExitedEventType;
+	dbgevt.data.exitData.exitCode = ExitCode();
+	PostDebuggerEvent(dbgevt);
+
 	return true;
 }
 
 bool GdbAdapter::Quit()
 {
-    this->m_rspConnector.SendPayload(RspData("k"));
+	// Modern gdbserver uses vkill to kill the taget:
+	// $vKill;7c3d#6e
+	// $OK#9a
+    this->m_rspConnector->SendPayload(RspData("k"));
     this->m_socket->Kill();
     m_isTargetRunning = false;
+
+	if (m_rspConnector)
+	{
+		delete m_rspConnector;
+		m_rspConnector = nullptr;
+	}
+
+	DebuggerEvent dbgevt;
+	dbgevt.type = TargetExitedEventType;
+	dbgevt.data.exitData.exitCode = ExitCode();
+	PostDebuggerEvent(dbgevt);
+
 	return true;
 }
 
@@ -334,7 +367,7 @@ std::vector<DebugThread> GdbAdapter::GetThreadList()
     int internal_thread_index{};
     std::vector<DebugThread> threads{};
 
-    auto reply = this->m_rspConnector.TransmitAndReceive(RspData("qfThreadInfo"));
+    auto reply = this->m_rspConnector->TransmitAndReceive(RspData("qfThreadInfo"));
     while(reply.m_data[0] != 'l') {
         if (reply.m_data[0] != 'm')
             throw std::runtime_error("thread list failed?");
@@ -345,7 +378,7 @@ std::vector<DebugThread> GdbAdapter::GetThreadList()
         for ( const auto& tid : tids )
             threads.emplace_back(std::stoi(tid, nullptr, 16), internal_thread_index++);
 
-        reply = this->m_rspConnector.TransmitAndReceive(RspData("qsThreadInfo"));
+        reply = this->m_rspConnector->TransmitAndReceive(RspData("qsThreadInfo"));
     }
 
     const auto current_thread = this->GetActiveThread();
@@ -382,13 +415,13 @@ bool GdbAdapter::SetActiveThreadId(std::uint32_t tid)
     if (m_isTargetRunning)
         return false;
 
-    if ( this->m_rspConnector.TransmitAndReceive(RspData(string("T{:x}"), tid)).AsString() != "OK" )
+    if ( this->m_rspConnector->TransmitAndReceive(RspData(string("T{:x}"), tid)).AsString() != "OK" )
         throw std::runtime_error("thread does not exist!");
 
-    if ( this->m_rspConnector.TransmitAndReceive(RspData(string("Hc{:x}"), tid)).AsString() != "OK")
+    if ( this->m_rspConnector->TransmitAndReceive(RspData(string("Hc{:x}"), tid)).AsString() != "OK")
         throw std::runtime_error("failed to set thread");
 
-    if ( this->m_rspConnector.TransmitAndReceive(RspData(string("Hg{:x}"), tid)).AsString() != "OK")
+    if ( this->m_rspConnector->TransmitAndReceive(RspData(string("Hg{:x}"), tid)).AsString() != "OK")
         throw std::runtime_error("failed to set thread");
 
     this->m_lastActiveThreadId = tid;
@@ -412,7 +445,7 @@ DebugBreakpoint GdbAdapter::AddBreakpoint(const std::uintptr_t address, unsigned
 //  TODO: other archs have other values for kind, e.g., thumb2 needs a value of 2 or 3 here.
 //  https://sourceware.org/gdb/current/onlinedocs/gdb/ARM-Breakpoint-Kinds.html
 
-    if (this->m_rspConnector.TransmitAndReceive(RspData("Z0,{:x},{}", address, kind)).AsString() != "OK" )
+    if (this->m_rspConnector->TransmitAndReceive(RspData("Z0,{:x},{}", address, kind)).AsString() != "OK" )
         return DebugBreakpoint{};
 
     const auto new_breakpoint = DebugBreakpoint(address, this->m_internalBreakpointId++, true);
@@ -436,7 +469,7 @@ bool GdbAdapter::RemoveBreakpoint(const DebugBreakpoint& breakpoint)
     if (m_remoteArch == "arch64")
         kind = 4;
 
-    if (this->m_rspConnector.TransmitAndReceive(RspData("z0,{:x},{}", breakpoint.m_address, kind)).AsString() != "OK" )
+    if (this->m_rspConnector->TransmitAndReceive(RspData("z0,{:x},{}", breakpoint.m_address, kind)).AsString() != "OK" )
         throw std::runtime_error("rsp reply failure on remove breakpoint");
 
     if (auto location = std::find(this->m_debugBreakpoints.begin(), this->m_debugBreakpoints.end(), breakpoint);
@@ -474,7 +507,7 @@ std::unordered_map<std::string, DebugRegister> GdbAdapter::ReadAllRegisters()
               });
 
     char request{'g'};
-    const auto register_info_reply = this->m_rspConnector.TransmitAndReceive(RspData(&request, sizeof(request)));
+    const auto register_info_reply = this->m_rspConnector->TransmitAndReceive(RspData(&request, sizeof(request)));
     auto register_info_reply_string = register_info_reply.AsString();
     if ( register_info_reply_string.empty() )
         throw std::runtime_error("register request reply empty");
@@ -512,20 +545,20 @@ bool GdbAdapter::WriteRegister(const std::string& reg, std::uintptr_t value)
     if (m_isTargetRunning)
         return false;
 
-    const auto reply = this->m_rspConnector.TransmitAndReceive(RspData("P{}={:016X}",
+    const auto reply = this->m_rspConnector->TransmitAndReceive(RspData("P{}={:016X}",
                                        this->m_registerInfo[reg].m_regNum, RspConnector::SwapEndianness(value)));
     if (reply.m_data[0])
         return true;
 
     char query{'g'};
-    const auto generic_query = this->m_rspConnector.TransmitAndReceive(RspData(&query, sizeof(query)));
+    const auto generic_query = this->m_rspConnector->TransmitAndReceive(RspData(&query, sizeof(query)));
     const auto register_offset = this->m_registerInfo[reg].m_offset;
 
     const auto first_half = generic_query.AsString().substr(0, 2 * (register_offset / 8));
     const auto second_half = generic_query.AsString().substr(2 * ((register_offset + this->m_registerInfo[reg].m_bitSize) / 8) );
     const auto payload = "G" + first_half + fmt::format("{:016X}", RspConnector::SwapEndianness(value)) + second_half;
 
-    if ( this->m_rspConnector.TransmitAndReceive(RspData(payload)).AsString() != "OK" )
+    if ( this->m_rspConnector->TransmitAndReceive(RspData(payload)).AsString() != "OK" )
         return false;
 
     return true;
@@ -537,7 +570,7 @@ DataBuffer GdbAdapter::ReadMemory(std::uintptr_t address, std::size_t size)
     if (m_isTargetRunning)
         return DataBuffer{};
 
-    auto reply = this->m_rspConnector.TransmitAndReceive(RspData("m{:x},{:x}", address, size));
+    auto reply = this->m_rspConnector->TransmitAndReceive(RspData("m{:x},{:x}", address, size));
     if (reply.m_data[0] == 'E')
         return DataBuffer{};
 
@@ -590,7 +623,7 @@ bool GdbAdapter::WriteMemory(std::uintptr_t address, const DataBuffer& buffer)
 		dest[2 * index + 1] = hex[1];
 	}
 
-    auto reply = this->m_rspConnector.TransmitAndReceive(RspData("M{:x},{:x}:{}", address, size, dest.ToEscapedString()));
+    auto reply = this->m_rspConnector->TransmitAndReceive(RspData("M{:x},{:x}:{}", address, size, dest.ToEscapedString()));
     if (reply.AsString() != "OK")
         return false;
 
@@ -605,7 +638,7 @@ std::string GdbAdapter::GetRemoteFile(const std::string& path)
 
     RspData output;
     int32_t error;
-    int32_t ret = this->m_rspConnector.HostFileIO(RspData("vFile:setfs:0"), output, error);
+    int32_t ret = this->m_rspConnector->HostFileIO(RspData("vFile:setfs:0"), output, error);
     if (ret < 0)
         throw runtime_error("Could not set remote filesystem");
 
@@ -613,7 +646,7 @@ std::string GdbAdapter::GetRemoteFile(const std::string& path)
     for ( const auto& ch : path )
         path_hex_string += fmt::format("{:02X}", ch);
 
-    ret = this->m_rspConnector.HostFileIO(
+    ret = this->m_rspConnector->HostFileIO(
                     RspData("vFile:open:{},{:X},{:X}", path_hex_string.c_str(), 0, 0), output, error);
     if (ret < 0)
         throw runtime_error("Unable to open file with host I/O");
@@ -626,7 +659,7 @@ std::string GdbAdapter::GetRemoteFile(const std::string& path)
 
     while(true)
     {
-        ret = this->m_rspConnector.HostFileIO(
+        ret = this->m_rspConnector->HostFileIO(
                     RspData("vFile:pread:{:X},{:X},{:X}", fd, blockSize, offset), output, error);
         if (ret < 0)
             throw runtime_error(fmt::format("host i/o pread() failed, result=%d, errno=%d", ret, error));
@@ -641,7 +674,7 @@ std::string GdbAdapter::GetRemoteFile(const std::string& path)
         offset += output.AsString().length();
     }
 
-    ret = this->m_rspConnector.HostFileIO(RspData(fmt::format("vFile:close:{:X}", fd)), output, error);
+    ret = this->m_rspConnector->HostFileIO(RspData(fmt::format("vFile:close:{:X}", fd)), output, error);
     if (ret)
         throw runtime_error(fmt::format("host i/o close() failed, result={}, errno={}", ret, error));
 
@@ -720,7 +753,7 @@ std::string GdbAdapter::GetTargetArchitecture()
     if (m_isTargetRunning)
         return "";
 
-    const auto xml = this->m_rspConnector.GetXml("target.xml");
+    const auto xml = this->m_rspConnector->GetXml("target.xml");
 
     pugi::xml_document doc{};
     const auto parse_result = doc.load_string(xml.c_str());
@@ -750,7 +783,7 @@ std::string GdbAdapter::GetTargetArchitecture()
 bool GdbAdapter::BreakInto()
 {
     char var = '\x03';
-    this->m_rspConnector.SendRaw(RspData(&var, sizeof(var)));
+    this->m_rspConnector->SendRaw(RspData(&var, sizeof(var)));
     m_isTargetRunning = false;
     return true;
 }
@@ -760,7 +793,7 @@ DebugStopReason GdbAdapter::ResponseHandler()
 {
 	while (true)
 	{
-		const RspData reply = m_rspConnector.ReceiveRspData();
+		const RspData reply = m_rspConnector->ReceiveRspData();
 		if (reply[0] == 'T')
 		{
 			// Target stopped
@@ -768,7 +801,14 @@ DebugStopReason GdbAdapter::ResponseHandler()
 			const auto tid = map["thread"];
 			m_isTargetRunning = false;
             m_lastActiveThreadId = tid;
-            return SignalToStopReason(map);
+
+			auto reason = SignalToStopReason(map);
+			DebuggerEvent dbgevt;
+			dbgevt.type = AdapterStoppedEventType;
+			dbgevt.data.targetStoppedData.reason = reason;
+			PostDebuggerEvent(dbgevt);
+
+            return reason;
 		}
 		else if (reply[0] == 'W')
 		{
@@ -833,8 +873,8 @@ DebugStopReason GdbAdapter::GenericGo(const std::string& goCommand)
 {
 	m_isTargetRunning = true;
 	// TODO: these two calls should be combined
-	m_rspConnector.SendPayload(RspData(goCommand));
-	m_rspConnector.ExpectAck();
+	m_rspConnector->SendPayload(RspData(goCommand));
+	m_rspConnector->ExpectAck();
 
 	return ResponseHandler();
 }
@@ -1037,7 +1077,7 @@ LocalGdbAdapterType::LocalGdbAdapterType(): DebugAdapterType("Local GDB")
 DebugAdapter* LocalGdbAdapterType::Create(BinaryNinja::BinaryView *data)
 {
 	// TODO: someone should free this.
-    return new QueuedAdapter(new GdbAdapter(data), data);
+    return new GdbAdapter(data);
 }
 
 
@@ -1074,7 +1114,7 @@ RemoteGdbAdapterType::RemoteGdbAdapterType(): DebugAdapterType("Remote GDB")
 DebugAdapter* RemoteGdbAdapterType::Create(BinaryNinja::BinaryView *data)
 {
 	// TODO: someone should free this.
-    return new QueuedAdapter(new GdbAdapter(data), data);
+    return new GdbAdapter(data);
 }
 
 

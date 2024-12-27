@@ -269,6 +269,8 @@ RspData RspConnector::ReceiveRspData() const
 RspData RspConnector::TransmitAndReceive(const RspData& data, const std::string& expect,
 										 std::function<void(const RspData& data)> asyncPacketHandler)
 {
+	std::unique_lock<std::recursive_mutex> lock(m_socketLock);
+
     this->SendPayload(data);
 
     RspData reply{};

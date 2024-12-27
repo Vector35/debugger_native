@@ -139,6 +139,8 @@ namespace BinaryNinjaDebugger
 
 	class RspConnector
 	{
+		std::recursive_mutex m_socketLock;
+
 		Socket* m_socket{};
 		bool m_acksEnabled{true};
 		std::vector<std::string> m_serverCapabilities{};
