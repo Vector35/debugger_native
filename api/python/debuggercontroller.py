@@ -729,11 +729,11 @@ class DebuggerController:
         """
         return dbgcore.BNDebuggerLaunch(self.handle)
 
-    def launch_and_wait(self) -> bool:
+    def launch_and_wait(self) -> DebugStopReason:
         """
         Launch the target and wait for all debugger events to be processed
         """
-        return dbgcore.BNDebuggerLaunchAndWait(self.handle)
+        return DebugStopReason(dbgcore.BNDebuggerLaunchAndWait(self.handle))
 
     def restart(self) -> None:
         """
@@ -761,13 +761,13 @@ class DebuggerController:
         """
         return dbgcore.BNDebuggerConnect(self.handle)
 
-    def connect_and_wait(self) -> bool:
+    def connect_and_wait(self) -> DebugStopReason:
         """
         Connect to a remote target (process) and wait for all debugger events to be processed
 
         The host and port of the remote target must first be specified by setting `remote_host` and `remote_port`
         """
-        return dbgcore.BNDebuggerConnectAndWait(self.handle)
+        return DebugStopReason(dbgcore.BNDebuggerConnectAndWait(self.handle))
 
     def connect_to_debug_server(self) -> bool:
         """
@@ -809,13 +809,13 @@ class DebuggerController:
         """
         return dbgcore.BNDebuggerAttach(self.handle)
 
-    def attach_and_wait(self) -> bool:
+    def attach_and_wait(self) -> DebugStopReason:
         """
         Attach to a running process and wait until all debugger events are processed
 
         The PID of the target process must be set via DebuggerState.pid_attach
         """
-        return dbgcore.BNDebuggerAttachAndWait(self.handle)
+        return DebugStopReason(dbgcore.BNDebuggerAttachAndWait(self.handle))
 
     def go(self) -> bool:
         """
@@ -941,7 +941,7 @@ class DebuggerController:
         :return: whether the operation is successfully requested
         """
         return dbgcore.BNDebuggerStepReturn(self.handle)
-    
+
     def step_return_reverse(self) -> bool:
         """
         Perform a step return on the target in reverse.
