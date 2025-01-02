@@ -364,7 +364,7 @@ DebugStopReason DebuggerController::GoAndWait()
 		return InternalError;
 
 	auto reason = GoAndWaitInternal();
-	if (!m_userRequestedBreak && (reason != ProcessExited))
+	if (!m_userRequestedBreak && (reason != ProcessExited) && (reason != InternalError))
 		NotifyStopped(reason);
 
 	m_targetControlMutex.unlock();
@@ -377,7 +377,7 @@ DebugStopReason DebuggerController::GoReverseAndWait()
 		return InternalError;
 
 	auto reason = GoReverseAndWaitInternal();
-	if (!m_userRequestedBreak && (reason != ProcessExited))
+	if (!m_userRequestedBreak && (reason != ProcessExited) && (reason != InternalError))
 		NotifyStopped(reason);
 
 	m_targetControlMutex.unlock();
@@ -628,7 +628,7 @@ DebugStopReason DebuggerController::StepIntoReverseAndWait(BNFunctionGraphType i
 		return InternalError;
 
 	auto reason = StepIntoReverseIL(il);
-	if (!m_userRequestedBreak && (reason != ProcessExited))
+	if (!m_userRequestedBreak && (reason != ProcessExited) && (reason != InternalError))
 		NotifyStopped(reason);
 
 	m_targetControlMutex.unlock();
@@ -641,7 +641,7 @@ DebugStopReason DebuggerController::StepIntoAndWait(BNFunctionGraphType il)
 		return InternalError;
 
 	auto reason = StepIntoIL(il);
-	if (!m_userRequestedBreak && (reason != ProcessExited))
+	if (!m_userRequestedBreak && (reason != ProcessExited) && (reason != InternalError))
 		NotifyStopped(reason);
 
 	m_targetControlMutex.unlock();
@@ -883,7 +883,7 @@ DebugStopReason DebuggerController::StepOverAndWait(BNFunctionGraphType il)
 		return InternalError;
 
 	auto reason = StepOverIL(il);
-	if (!m_userRequestedBreak && (reason != ProcessExited))
+	if (!m_userRequestedBreak && (reason != ProcessExited) && (reason != InternalError))
 		NotifyStopped(reason);
 
 	m_targetControlMutex.unlock();
@@ -897,7 +897,7 @@ DebugStopReason DebuggerController::StepOverReverseAndWait(BNFunctionGraphType i
 		return InternalError;
 
 	auto reason = StepOverReverseIL(il);
-	if (!m_userRequestedBreak && (reason != ProcessExited))
+	if (!m_userRequestedBreak && (reason != ProcessExited) && (reason != InternalError))
 		NotifyStopped(reason);
 
 	m_targetControlMutex.unlock();
@@ -981,7 +981,7 @@ DebugStopReason DebuggerController::StepReturnAndWait()
 		return InternalError;
 
 	auto reason = StepReturnAndWaitInternal();
-	if (!m_userRequestedBreak && (reason != ProcessExited))
+	if (!m_userRequestedBreak && (reason != ProcessExited) && (reason != InternalError))
 		NotifyStopped(reason);
 
 	m_targetControlMutex.unlock();
@@ -995,7 +995,7 @@ DebugStopReason DebuggerController::StepReturnReverseAndWait()
 		return InternalError;
 
 	auto reason = StepReturnReverseAndWaitInternal();
-	if (!m_userRequestedBreak && (reason != ProcessExited))
+	if (!m_userRequestedBreak && (reason != ProcessExited) && (reason != InternalError))
 		NotifyStopped(reason);
 
 	m_targetControlMutex.unlock();
@@ -1048,7 +1048,7 @@ DebugStopReason DebuggerController::RunToAndWait(const std::vector<uint64_t>& re
 		return InternalError;
 
 	auto reason = RunToAndWaitInternal(remoteAddresses);
-	if (!m_userRequestedBreak && (reason != ProcessExited))
+	if (!m_userRequestedBreak && (reason != ProcessExited) && (reason != InternalError))
 		NotifyStopped(reason);
 
 	m_targetControlMutex.unlock();
