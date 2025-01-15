@@ -17,6 +17,7 @@ limitations under the License.
 #include "adaptersettings.h"
 #include "uicontext.h"
 #include "qfiledialog.h"
+#include "settingsview.h"
 
 using namespace BinaryNinjaDebuggerAPI;
 using namespace BinaryNinja;
@@ -48,93 +49,99 @@ AdapterSettingsDialog::AdapterSettingsDialog(QWidget* parent, DbgRef<DebuggerCon
 
 	connect(m_adapterEntry, &QComboBox::currentTextChanged, this, &AdapterSettingsDialog::selectAdapter);
 
-	m_inputFile = new QLineEdit(this);
-	m_inputFile->setMinimumWidth(800);
-	m_pathEntry = new QLineEdit(this);
-	m_pathEntry->setMinimumWidth(800);
-	m_argumentsEntry = new QLineEdit(this);
-	m_workingDirectoryEntry = new QLineEdit(this);
-	m_terminalEmulator = new QCheckBox(this);
-
-	auto* fileSelector = new QPushButton("...", this);
-	fileSelector->setMaximumWidth(30);
-	connect(fileSelector, &QPushButton::clicked, [&]() {
-		auto fileName = QFileDialog::getOpenFileName(this, "Select Input File", m_workingDirectoryEntry->text());
-		if (!fileName.isEmpty())
-			m_inputFile->setText(fileName);
-	});
-
-	auto* pathSelector = new QPushButton("...", this);
-	pathSelector->setMaximumWidth(30);
-	connect(pathSelector, &QPushButton::clicked, [&]() {
-		auto fileName = QFileDialog::getOpenFileName(this, "Select Executable Path", m_pathEntry->text());
-		if (!fileName.isEmpty())
-			m_pathEntry->setText(fileName);
-	});
-
-	auto* workingDirSelector = new QPushButton("...", this);
-	workingDirSelector->setMaximumWidth(30);
-	connect(workingDirSelector, &QPushButton::clicked, [&]() {
-		auto pathName = QFileDialog::getExistingDirectory(this, "Specify Working Directory",
-			m_workingDirectoryEntry->text(), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-		if (!pathName.isEmpty())
-			m_workingDirectoryEntry->setText(pathName);
-	});
-
-	auto fileEntryLayout = new QHBoxLayout;
-	fileEntryLayout->addWidget(m_inputFile);
-	fileEntryLayout->addWidget(fileSelector);
-
-	auto pathEntryLayout = new QHBoxLayout;
-	pathEntryLayout->addWidget(m_pathEntry);
-	pathEntryLayout->addWidget(pathSelector);
-
-	auto workingDirLayout = new QHBoxLayout;
-	workingDirLayout->addWidget(m_workingDirectoryEntry);
-	workingDirLayout->addWidget(workingDirSelector);
-
-	QVBoxLayout* contentLayout = new QVBoxLayout;
-	contentLayout->setSpacing(10);
-	contentLayout->addWidget(new QLabel("Adapter Type"));
-	contentLayout->addWidget(m_adapterEntry);
-	contentLayout->addWidget(new QLabel("Input File"));
-	contentLayout->addLayout(fileEntryLayout);
-	contentLayout->addWidget(new QLabel("Executable Path"));
-	contentLayout->addLayout(pathEntryLayout);
-	contentLayout->addWidget(new QLabel("Working Directory"));
-	contentLayout->addLayout(workingDirLayout);
-	contentLayout->addWidget(new QLabel("Command Line Arguments"));
-	contentLayout->addWidget(m_argumentsEntry);
-	contentLayout->addWidget(new QLabel("Run In Separate Terminal"));
-	contentLayout->addWidget(m_terminalEmulator);
-
-	QHBoxLayout* buttonLayout = new QHBoxLayout;
-	buttonLayout->setContentsMargins(0, 0, 0, 0);
-
-	QPushButton* cancelButton = new QPushButton("Cancel");
-	connect(cancelButton, &QPushButton::clicked, [&]() { reject(); });
-	QPushButton* acceptButton = new QPushButton("Accept");
-	connect(acceptButton, &QPushButton::clicked, [&]() { apply(); });
-	acceptButton->setDefault(true);
-
-	buttonLayout->addStretch(1);
-	buttonLayout->addWidget(cancelButton);
-	buttonLayout->addWidget(acceptButton);
-
-	layout->addLayout(contentLayout);
-	layout->addStretch(1);
-	layout->addSpacing(10);
-	layout->addLayout(buttonLayout);
+	auto adapterType = DebugAdapterType::GetByName(m_controller->GetAdapterType());
+	auto settings = adapterType->GetLaunchSettingsForData(m_controller->GetData());
+	auto settingsView = new SettingsView(this, settings);
+	layout->addWidget(settingsView);
 	setLayout(layout);
 
-	m_inputFile->setText(QString::fromStdString(m_controller->GetInputFile()));
-	m_pathEntry->setText(QString::fromStdString(m_controller->GetExecutablePath()));
-	m_terminalEmulator->setChecked(m_controller->GetRequestTerminalEmulator());
-	m_argumentsEntry->setText(QString::fromStdString(m_controller->GetCommandLineArguments()));
-	m_workingDirectoryEntry->setText(QString::fromStdString(m_controller->GetWorkingDirectory()));
-
-	selectAdapter(m_adapterEntry->currentText());
-	setFixedSize(QDialog::sizeHint());
+	// m_inputFile = new QLineEdit(this);
+	// m_inputFile->setMinimumWidth(800);
+	// m_pathEntry = new QLineEdit(this);
+	// m_pathEntry->setMinimumWidth(800);
+	// m_argumentsEntry = new QLineEdit(this);
+	// m_workingDirectoryEntry = new QLineEdit(this);
+	// m_terminalEmulator = new QCheckBox(this);
+	//
+	// auto* fileSelector = new QPushButton("...", this);
+	// fileSelector->setMaximumWidth(30);
+	// connect(fileSelector, &QPushButton::clicked, [&]() {
+	// 	auto fileName = QFileDialog::getOpenFileName(this, "Select Input File", m_workingDirectoryEntry->text());
+	// 	if (!fileName.isEmpty())
+	// 		m_inputFile->setText(fileName);
+	// });
+	//
+	// auto* pathSelector = new QPushButton("...", this);
+	// pathSelector->setMaximumWidth(30);
+	// connect(pathSelector, &QPushButton::clicked, [&]() {
+	// 	auto fileName = QFileDialog::getOpenFileName(this, "Select Executable Path", m_pathEntry->text());
+	// 	if (!fileName.isEmpty())
+	// 		m_pathEntry->setText(fileName);
+	// });
+	//
+	// auto* workingDirSelector = new QPushButton("...", this);
+	// workingDirSelector->setMaximumWidth(30);
+	// connect(workingDirSelector, &QPushButton::clicked, [&]() {
+	// 	auto pathName = QFileDialog::getExistingDirectory(this, "Specify Working Directory",
+	// 		m_workingDirectoryEntry->text(), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+	// 	if (!pathName.isEmpty())
+	// 		m_workingDirectoryEntry->setText(pathName);
+	// });
+	//
+	// auto fileEntryLayout = new QHBoxLayout;
+	// fileEntryLayout->addWidget(m_inputFile);
+	// fileEntryLayout->addWidget(fileSelector);
+	//
+	// auto pathEntryLayout = new QHBoxLayout;
+	// pathEntryLayout->addWidget(m_pathEntry);
+	// pathEntryLayout->addWidget(pathSelector);
+	//
+	// auto workingDirLayout = new QHBoxLayout;
+	// workingDirLayout->addWidget(m_workingDirectoryEntry);
+	// workingDirLayout->addWidget(workingDirSelector);
+	//
+	// QVBoxLayout* contentLayout = new QVBoxLayout;
+	// contentLayout->setSpacing(10);
+	// contentLayout->addWidget(new QLabel("Adapter Type"));
+	// contentLayout->addWidget(m_adapterEntry);
+	// contentLayout->addWidget(new QLabel("Input File"));
+	// contentLayout->addLayout(fileEntryLayout);
+	// contentLayout->addWidget(new QLabel("Executable Path"));
+	// contentLayout->addLayout(pathEntryLayout);
+	// contentLayout->addWidget(new QLabel("Working Directory"));
+	// contentLayout->addLayout(workingDirLayout);
+	// contentLayout->addWidget(new QLabel("Command Line Arguments"));
+	// contentLayout->addWidget(m_argumentsEntry);
+	// contentLayout->addWidget(new QLabel("Run In Separate Terminal"));
+	// contentLayout->addWidget(m_terminalEmulator);
+	//
+	// QHBoxLayout* buttonLayout = new QHBoxLayout;
+	// buttonLayout->setContentsMargins(0, 0, 0, 0);
+	//
+	// QPushButton* cancelButton = new QPushButton("Cancel");
+	// connect(cancelButton, &QPushButton::clicked, [&]() { reject(); });
+	// QPushButton* acceptButton = new QPushButton("Accept");
+	// connect(acceptButton, &QPushButton::clicked, [&]() { apply(); });
+	// acceptButton->setDefault(true);
+	//
+	// buttonLayout->addStretch(1);
+	// buttonLayout->addWidget(cancelButton);
+	// buttonLayout->addWidget(acceptButton);
+	//
+	// layout->addLayout(contentLayout);
+	// layout->addStretch(1);
+	// layout->addSpacing(10);
+	// layout->addLayout(buttonLayout);
+	// setLayout(layout);
+	//
+	// m_inputFile->setText(QString::fromStdString(m_controller->GetInputFile()));
+	// m_pathEntry->setText(QString::fromStdString(m_controller->GetExecutablePath()));
+	// m_terminalEmulator->setChecked(m_controller->GetRequestTerminalEmulator());
+	// m_argumentsEntry->setText(QString::fromStdString(m_controller->GetCommandLineArguments()));
+	// m_workingDirectoryEntry->setText(QString::fromStdString(m_controller->GetWorkingDirectory()));
+	//
+	// selectAdapter(m_adapterEntry->currentText());
+	// setFixedSize(QDialog::sizeHint());
 }
 
 
