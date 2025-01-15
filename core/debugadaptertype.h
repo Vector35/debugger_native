@@ -55,5 +55,9 @@ namespace BinaryNinjaDebugger {
 		static std::vector<std::string> GetAvailableAdapters(BinaryNinja::BinaryView* data);
 
 		static std::string GetBestAdapterForCurrentSystem(BinaryNinja::BinaryView* data);
+
+		Ref<Settings> GetDefaultLaunchSettingsForData(BinaryView* data);
+		virtual Ref<Settings> GetLaunchSettingsForData(BinaryView* data);
+		// virtual Ref<Settings> GetConnectSettingsForData(BinaryView* data);
 	};
 };  // namespace BinaryNinjaDebugger

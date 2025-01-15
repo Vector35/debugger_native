@@ -149,10 +149,11 @@ namespace BinaryNinjaDebugger {
 	{
 	public:
 		LldbAdapterType();
-		virtual DebugAdapter* Create(BinaryNinja::BinaryView* data);
-		virtual bool IsValidForData(BinaryNinja::BinaryView* data);
-		virtual bool CanExecute(BinaryNinja::BinaryView* data);
-		virtual bool CanConnect(BinaryNinja::BinaryView* data);
+		DebugAdapter* Create(BinaryNinja::BinaryView* data) override;
+		bool IsValidForData(BinaryNinja::BinaryView* data) override;
+		bool CanExecute(BinaryNinja::BinaryView* data) override;
+		bool CanConnect(BinaryNinja::BinaryView* data) override;
+		Ref<Settings> GetLaunchSettingsForData(BinaryView *data) override;
 	};
 
 

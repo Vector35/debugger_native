@@ -57,6 +57,7 @@ extern "C"
 	typedef struct BNMediumLevelILFunction BNMediumLevelILFunction;
 	typedef struct BNHighLevelILFunction BNHighLevelILFunction;
 	typedef struct BNVariable BNVariable;
+	typedef struct BNSettings BNSettings;
 
 //	When `ffi.h` gets parsed by clang type parser, the binaryninjacore.h is NOT included so this enum will become not
 //	defined. As a workaround, I duplicate its definition here. When the code gets compiled, the `BN_TYPE_PARSER` is
@@ -505,6 +506,8 @@ extern "C"
 	DEBUGGER_FFI_API bool BNDebugAdapterTypeCanExecute(BNDebugAdapterType* adapter, BNBinaryView* data);
 	DEBUGGER_FFI_API bool BNDebugAdapterTypeCanConnect(BNDebugAdapterType* adapter, BNBinaryView* data);
 	DEBUGGER_FFI_API char** BNGetAvailableDebugAdapterTypes(BNBinaryView* data, size_t* count);
+	DEBUGGER_FFI_API BNSettings* BNDebugAdapterGetDefaultLaunchSettingsForData(BNDebugAdapterType* adapter, BNBinaryView* data);
+	DEBUGGER_FFI_API BNSettings* BNDebugAdapterGetLaunchSettingsForData(BNDebugAdapterType* adapter, BNBinaryView* data);
 
 
 	// DebugModule

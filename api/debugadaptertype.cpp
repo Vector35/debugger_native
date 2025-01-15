@@ -64,3 +64,21 @@ std::vector<std::string> DebugAdapterType::GetAvailableAdapters(Ref<BinaryView> 
 	BNDebuggerFreeStringList(adapters, count);
 	return result;
 }
+
+
+Ref<Settings> DebugAdapterType::GetLaunchSettingsForData(Ref<BinaryView> data)
+{
+	auto settings = BNDebugAdapterGetLaunchSettingsForData(m_object, data->GetObject());
+	if (!settings)
+		return nullptr;
+	return new Settings(settings);
+}
+
+
+Ref<Settings> DebugAdapterType::GetDefaultLaunchSettingsForData(Ref<BinaryView> data)
+{
+	auto settings = BNDebugAdapterGetDefaultLaunchSettingsForData(m_object, data->GetObject());
+	if (!settings)
+		return nullptr;
+	return new Settings(settings);
+}

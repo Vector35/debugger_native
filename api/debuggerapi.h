@@ -617,5 +617,7 @@ namespace BinaryNinjaDebuggerAPI {
 		bool CanExecute(Ref<BinaryView> data);
 		bool CanConnect(Ref<BinaryView> data);
 		static std::vector<std::string> GetAvailableAdapters(Ref<BinaryView> data);
+		virtual Ref<Settings> GetLaunchSettingsForData(Ref<BinaryView> data);
+		Ref<Settings> GetDefaultLaunchSettingsForData(Ref<BinaryView> data);
 	};
 };  // namespace BinaryNinjaDebuggerAPI

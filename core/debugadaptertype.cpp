@@ -75,3 +75,51 @@ std::string DebugAdapterType::GetBestAdapterForCurrentSystem(BinaryNinja::Binary
 	return "LLDB";
 #endif
 }
+
+
+Ref<Settings> DebugAdapterType::GetDefaultLaunchSettingsForData(BinaryView* data)
+{
+	// Create launch Settings and generate default schema
+	auto settings = Settings::Instance(GetUniqueIdentifierString());
+	settings->RegisterGroup("target", "Target Options");
+	settings->RegisterSetting("target.executable_path",
+			R"({
+			"title" : "Executable Path",
+			"type" : "string",
+			"default" : "",
+			"description" : "Path of the executable to launch.",
+			"readOnly" : false,
+			})");
+	settings->RegisterSetting("target.input_file",
+			R"({
+			"title" : "Input File",
+			"type" : "string",
+			"default" : "",
+			"description" : "Input file to use to find the base address of the binary view",
+			"readOnly" : false,
+			})");
+	settings->RegisterSetting("target.working_directory",
+			R"({
+			"title" : "Working Directory",
+			"type" : "string",
+			"default" : "",
+			"description" : "Working directory to launch the target in.",
+			"readOnly" : false,
+			})");
+	settings->RegisterSetting("target.command_line",
+			R"({
+			"title" : "Command Line Arguments",
+			"type" : "string",
+			"default" : "",
+			"description" : "Command line arguments to pass to the target",
+			"readOnly" : false,
+			})");
+
+	return settings;
+}
+
+
+Ref<Settings> DebugAdapterType::GetLaunchSettingsForData(BinaryView* data)
+{
+	return GetDefaultLaunchSettingsForData(data);
+}

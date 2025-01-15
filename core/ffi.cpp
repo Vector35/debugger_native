@@ -635,6 +635,26 @@ bool BNDebugAdapterTypeCanConnect(BNDebugAdapterType* adapter, BNBinaryView* dat
 }
 
 
+BNSettings* BNDebugAdapterGetLaunchSettingsForData(BNDebugAdapterType* adapter, BNBinaryView* data)
+{
+	Ref<BinaryView> view = new BinaryView(BNNewViewReference(data));
+	auto settings = adapter->object->GetLaunchSettingsForData(view);
+	if (!settings)
+		return nullptr;
+	return BNNewSettingsReference(settings->GetObject());
+}
+
+
+BNSettings* BNDebugAdapterGetDefaultLaunchSettingsForData(BNDebugAdapterType* adapter, BNBinaryView* data)
+{
+	Ref<BinaryView> view = new BinaryView(BNNewViewReference(data));
+	auto settings = adapter->object->GetDefaultLaunchSettingsForData(view);
+	if (!settings)
+		return nullptr;
+	return BNNewSettingsReference(settings->GetObject());
+}
+
+
 BNDebugAdapterConnectionStatus BNDebuggerGetConnectionStatus(BNDebuggerController* controller)
 {
 	return controller->object->GetConnectionStatus();

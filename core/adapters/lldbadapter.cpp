@@ -117,6 +117,22 @@ bool LldbAdapterType::CanExecute(BinaryNinja::BinaryView* data)
 }
 
 
+Ref<Settings> LldbAdapterType::GetLaunchSettingsForData(BinaryView *data)
+{
+	Ref<Settings> settings = GetDefaultLaunchSettingsForData(data);
+	settings->RegisterSetting("target.run_in_seperate_terminal",
+		R"({
+			"title" : "Run In Separate Terminal",
+			"type" : "string",
+			"default" : "",
+			"description" : "Launch the target in separate terminal",
+			"readOnly" : false,
+			})");
+
+	return settings;
+}
+
+
 void BinaryNinjaDebugger::InitLldbAdapterType()
 {
 	static LldbAdapterType lldbType;
