@@ -123,10 +123,10 @@ Ref<Settings> LldbAdapterType::GetLaunchSettingsForData(BinaryView *data)
 	settings->RegisterSetting("target.run_in_seperate_terminal",
 		R"({
 			"title" : "Run In Separate Terminal",
-			"type" : "string",
-			"default" : "",
+			"type" : "boolean",
+			"default" : false,
 			"description" : "Launch the target in separate terminal",
-			"readOnly" : false,
+			"readOnly" : false
 			})");
 
 	return settings;

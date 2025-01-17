@@ -88,7 +88,7 @@ Ref<Settings> DebugAdapterType::GetDefaultLaunchSettingsForData(BinaryView* data
 			"type" : "string",
 			"default" : "",
 			"description" : "Path of the executable to launch.",
-			"readOnly" : false,
+			"readOnly" : false
 			})");
 	settings->RegisterSetting("target.input_file",
 			R"({
@@ -96,7 +96,7 @@ Ref<Settings> DebugAdapterType::GetDefaultLaunchSettingsForData(BinaryView* data
 			"type" : "string",
 			"default" : "",
 			"description" : "Input file to use to find the base address of the binary view",
-			"readOnly" : false,
+			"readOnly" : false
 			})");
 	settings->RegisterSetting("target.working_directory",
 			R"({
@@ -104,7 +104,7 @@ Ref<Settings> DebugAdapterType::GetDefaultLaunchSettingsForData(BinaryView* data
 			"type" : "string",
 			"default" : "",
 			"description" : "Working directory to launch the target in.",
-			"readOnly" : false,
+			"readOnly" : false
 			})");
 	settings->RegisterSetting("target.command_line",
 			R"({
@@ -112,7 +112,7 @@ Ref<Settings> DebugAdapterType::GetDefaultLaunchSettingsForData(BinaryView* data
 			"type" : "string",
 			"default" : "",
 			"description" : "Command line arguments to pass to the target",
-			"readOnly" : false,
+			"readOnly" : false
 			})");
 
 	return settings;
