@@ -160,6 +160,15 @@ static void RegisterSettings()
 			"description" : "Output the current state (e.g., register values, next instruction) in the debugger console when the target stops.",
 			"ignore" : ["SettingsProjectScope", "SettingsResourceScope"]
 			})");
+
+	settings->RegisterSetting("debugger.holdAnalysis",
+	R"({
+			"title" : "Hold Analysis During Debugging",
+			"type" : "boolean",
+			"default" : true,
+			"description" : "When enabled, this holds the analysis for the binary view during debugging to increase performance."
+			})");
+
 }
 
 extern "C"

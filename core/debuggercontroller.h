@@ -151,6 +151,8 @@ namespace BinaryNinjaDebugger {
 
 		bool m_zeroSegmentAddedByDebugger = false;
 
+		BNAnalysisState m_oldAnalysisState = IdleState;
+
 		void DetectLoadedModule();
 
 	public:

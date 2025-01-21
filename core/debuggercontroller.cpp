@@ -1061,10 +1061,20 @@ bool DebuggerController::CreateDebuggerBinaryView()
 	BinaryViewRef data = GetData();
 	auto segment = data->GetSegmentAt(0);
 	m_zeroSegmentAddedByDebugger = segment == nullptr;
+
+	if (auto holdAnalysis = Settings::Instance()->Get<bool>("debugger.holdAnalysis"))
+	{
+		auto analysisProgress = data->GetAnalysisProgress();
+		m_oldAnalysisState = analysisProgress.state;
+		data->SetAnalysisHold(true);
+	}
+
 	m_accessor = new DebuggerFileAccessor(data);
 	data->SetFunctionAnalysisUpdateDisabled(true);
 	data->GetMemoryMap()->AddRemoteMemoryRegion("debugger", 0, m_accessor);
 	data->SetFunctionAnalysisUpdateDisabled(false);
+
+
 	return true;
 }
 
@@ -1552,6 +1562,11 @@ void DebuggerController::EventHandler(const DebuggerEvent& event)
 		m_inputFileLoaded = false;
 		m_initialBreakpointSeen = false;
 		RemoveDebuggerMemoryRegion();
+		if (m_oldAnalysisState != HoldState)
+		{
+			m_data->SetAnalysisHold(false);
+		}
+
 		if (m_accessor)
 		{
 			delete m_accessor;
