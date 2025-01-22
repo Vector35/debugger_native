@@ -153,6 +153,7 @@ namespace BinaryNinjaDebugger {
 		virtual bool IsValidForData(BinaryNinja::BinaryView* data);
 		virtual bool CanExecute(BinaryNinja::BinaryView* data);
 		virtual bool CanConnect(BinaryNinja::BinaryView* data);
+		static void RegisterSettings();
 	};
 
 

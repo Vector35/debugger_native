@@ -117,10 +117,49 @@ bool LldbAdapterType::CanExecute(BinaryNinja::BinaryView* data)
 }
 
 
+void LldbAdapterType::RegisterSettings()
+{
+	auto settings = Settings::Instance("LLDBAdapter::Launch");
+	settings->RegisterSetting("target.executable_path",
+		R"({
+			"title" : "Executable Path",
+			"type" : "string",
+			"default" : "foobar.macho",
+			"description" : "Path of the executable to launch.",
+			"readOnly" : false
+			})");
+	settings->RegisterSetting("target.input_file",
+			R"({
+			"title" : "Input File",
+			"type" : "string",
+			"default" : "",
+			"description" : "Input file to use to find the base address of the binary view",
+			"readOnly" : false
+			})");
+	settings->RegisterSetting("target.working_directory",
+			R"({
+			"title" : "Working Directory",
+			"type" : "string",
+			"default" : "",
+			"description" : "Working directory to launch the target in.",
+			"readOnly" : false
+			})");
+	settings->RegisterSetting("target.command_line",
+			R"({
+			"title" : "Command Line Arguments",
+			"type" : "string",
+			"default" : "",
+			"description" : "Command line arguments to pass to the target",
+			"readOnly" : false
+			})");
+}
+
+
 void BinaryNinjaDebugger::InitLldbAdapterType()
 {
 	static LldbAdapterType lldbType;
 	DebugAdapterType::Register(&lldbType);
+	LldbAdapterType::RegisterSettings();
 }
 
 
@@ -167,6 +206,9 @@ bool LldbAdapter::ExecuteWithArgs(const std::string& path, const std::string& ar
 	thread.detach();
 
 	SBError err;
+
+	auto settings = Settings::Instance("LLDBAdapter::Launch");
+	auto executablePath = settings->Get<std::string>("target.executable_path");
 
 	// *Attempt* to create a functional target triple for the binary.
 	// This allows attaching to fat binaries. If the triple is empty, it will still attach on thin binaries.
