@@ -85,8 +85,6 @@ public:
 
 	void navigateDebugger(uint64_t address);
 	void openDebuggerSideBar(ViewFrame* frame = nullptr);
-	void removeOldIPHighlight();
-	void updateIPHighlight();
 	void navigateToCurrentIP();
 	void checkFocusDebuggerConsole();
 
