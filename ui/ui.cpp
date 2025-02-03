@@ -1007,30 +1007,6 @@ void GlobalDebuggerUI::CloseGlobalAreaWidgets(UIContext* context)
 }
 
 
-TagTypeRef DebuggerUI::getPCTagType(BinaryViewRef data)
-{
-	TagTypeRef type = data->GetTagType("Program Counter");
-	if (type)
-		return type;
-
-	TagTypeRef pcTagType = new TagType(data, "Program Counter", "=>");
-	data->AddTagType(pcTagType);
-	return pcTagType;
-}
-
-
-TagTypeRef DebuggerUI::getBreakpointTagType(BinaryViewRef data)
-{
-	TagTypeRef type = data->GetTagType("Breakpoints");
-	if (type)
-		return type;
-
-	TagTypeRef pcTagType = new TagType(data, "Breakpoints", "🛑");
-	data->AddTagType(pcTagType);
-	return pcTagType;
-}
-
-
 // Navigate to the address. This has some special handling of the process which is useful for a debugging scenario.
 // I believe at least some logic should be built into the default navigation behavior.
 void DebuggerUI::navigateDebugger(uint64_t address)
@@ -1222,23 +1198,10 @@ void DebuggerUI::updateUI(const DebuggerEvent& event)
 		{
 			for (FunctionRef func : data->GetAnalysisFunctionsContainingAddress(addr))
 			{
-				bool tagFound = false;
-				for (TagRef tag : func->GetAddressTags(data->GetDefaultArchitecture(), addr))
-				{
-					if (tag->GetType() == getBreakpointTagType(data))
-					{
-						tagFound = true;
-						break;
-					}
-				}
-
-				if (!tagFound)
-				{
-					auto id = data->BeginUndoActions();
-					func->SetAutoInstructionHighlight(data->GetDefaultArchitecture(), addr, RedHighlightColor);
-					func->CreateUserAddressTag(data->GetDefaultArchitecture(), addr, getBreakpointTagType(data), "breakpoint");
-					data->ForgetUndoActions(id);
-				}
+				// TODO: this is a hack to make the function lines re-render
+				auto id = data->BeginUndoActions();
+				func->SetComment(func->GetComment());
+				data->ForgetUndoActions(id);
 			}
 		}
 		break;
@@ -1262,23 +1225,10 @@ void DebuggerUI::updateUI(const DebuggerEvent& event)
 		{
 			for (FunctionRef func : data->GetAnalysisFunctionsContainingAddress(address))
 			{
-				bool tagFound = false;
-				for (TagRef tag : func->GetAddressTags(data->GetDefaultArchitecture(), address))
-				{
-					if (tag->GetType() == getBreakpointTagType(data))
-					{
-						tagFound = true;
-						break;
-					}
-				}
-
-				if (!tagFound)
-				{
-					auto id = data->BeginUndoActions();
-					func->SetAutoInstructionHighlight(data->GetDefaultArchitecture(), address, RedHighlightColor);
-					func->CreateUserAddressTag(data->GetDefaultArchitecture(), address, getBreakpointTagType(data), "breakpoint");
-					data->ForgetUndoActions(id);
-				}
+				// TODO: this is a hack to make the function lines re-render
+				auto id = data->BeginUndoActions();
+				func->SetComment(func->GetComment());
+				data->ForgetUndoActions(id);
 			}
 		}
 		break;
@@ -1300,16 +1250,10 @@ void DebuggerUI::updateUI(const DebuggerEvent& event)
 		{
 			for (FunctionRef func : data->GetAnalysisFunctionsContainingAddress(address))
 			{
-				func->SetAutoInstructionHighlight(data->GetDefaultArchitecture(), address, NoHighlightColor);
-				for (TagRef tag : func->GetAddressTags(data->GetDefaultArchitecture(), address))
-				{
-					if (tag->GetType() != getBreakpointTagType(data))
-						continue;
-
-					auto id = data->BeginUndoActions();
-					func->RemoveUserAddressTag(data->GetDefaultArchitecture(), address, tag);
-					data->ForgetUndoActions(id);
-				}
+				// TODO: this is a hack to make the function lines re-render
+				auto id = data->BeginUndoActions();
+				func->SetComment(func->GetComment());
+				data->ForgetUndoActions(id);
 			}
 		}
 		break;
@@ -1333,16 +1277,10 @@ void DebuggerUI::updateUI(const DebuggerEvent& event)
 		{
 			for (FunctionRef func : data->GetAnalysisFunctionsContainingAddress(address))
 			{
-				func->SetAutoInstructionHighlight(data->GetDefaultArchitecture(), address, NoHighlightColor);
-				for (TagRef tag : func->GetAddressTags(data->GetDefaultArchitecture(), address))
-				{
-					if (tag->GetType() != getBreakpointTagType(data))
-						continue;
-
-					auto id = data->BeginUndoActions();
-					func->RemoveUserAddressTag(data->GetDefaultArchitecture(), address, tag);
-					data->ForgetUndoActions(id);
-				}
+				// TODO: this is a hack to make the function lines re-render
+				auto id = data->BeginUndoActions();
+				func->SetComment(func->GetComment());
+				data->ForgetUndoActions(id);
 			}
 		}
 		break;

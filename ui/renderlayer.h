@@ -30,4 +30,13 @@ public:
 };
 
 
+class BreakpointRenderLayer : public RenderLayer
+{
+public:
+	BreakpointRenderLayer();
+
+	void ApplyToBlock(Ref<BasicBlock> block, std::vector<DisassemblyTextLine>& lines) override;
+};
+
+
 void RegisterRenderLayers();

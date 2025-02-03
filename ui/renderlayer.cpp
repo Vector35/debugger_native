@@ -33,7 +33,6 @@ void PCRenderLayer::ApplyToBlock(Ref<BasicBlock> block, std::vector<DisassemblyT
 	if (!controller)
 		return;
 
-
 	uint64_t ipAddr = controller->IP();
 
 	for (auto& line : lines)
@@ -56,9 +55,44 @@ void PCRenderLayer::ApplyToBlock(Ref<BasicBlock> block, std::vector<DisassemblyT
 }
 
 
+BreakpointRenderLayer::BreakpointRenderLayer(): RenderLayer("Debugger Breakpoints")
+{
+
+}
+
+
+void BreakpointRenderLayer::ApplyToBlock(Ref<BasicBlock> block, std::vector<DisassemblyTextLine>& lines)
+{
+	Ref<BinaryView> bv = block->GetFunction()->GetView();
+	DbgRef<DebuggerController> controller = DebuggerController::GetController(bv);
+	if (!controller)
+		return;
+
+	for (auto& line : lines)
+	{
+		if (controller->ContainsBreakpoint(line.addr))
+		{
+			InstructionTextToken breakpointToken(BNInstructionTextTokenType::TagToken, "🛑");
+			line.tokens.insert(line.tokens.begin(), breakpointToken);
+
+			line.highlight.style = StandardHighlightColor;
+			line.highlight.color = RedHighlightColor;
+			line.highlight.mixColor = NoHighlightColor;
+			line.highlight.mix = 0;
+			line.highlight.r = 0;
+			line.highlight.g = 0;
+			line.highlight.b = 0;
+			line.highlight.alpha = 255;
+		}
+	}
+}
+
+
 void RegisterRenderLayers()
 {
+	static BreakpointRenderLayer* g_breakpointRenderLayer = new BreakpointRenderLayer();
 	static PCRenderLayer* g_pcRenderLayer = new PCRenderLayer();
 
-	RenderLayer::Register(g_pcRenderLayer);
+	RenderLayer::Register(g_breakpointRenderLayer, BNRenderLayerDefaultEnableState::AlwaysEnabledRenderLayerDefaultEnableState);
+	RenderLayer::Register(g_pcRenderLayer, BNRenderLayerDefaultEnableState::AlwaysEnabledRenderLayerDefaultEnableState);
 }
